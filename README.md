@@ -13,9 +13,9 @@ several of these command blocks to move in several different directions.
 
 ## Installation
 
-As of 07 Jan 2024, files have to be manually copied to the target datapack
-folder (either a server-based folder or a save folder). The `pack.mcmeta`
-file is copied to the top-level folder, and the `functions` folder and its
-subfolders are copied to `data/cjt_ship/functions` in the top-level folder.
+* Use `dobuild` to regenerate the datapack contents, if necessary.
+* Use `dorelease` to rebuild the datapack .zip file, if necessary.
+* Copy `releases/CJTspaceships.zip` to the `datapacks` folder in your
+  world save.
 
 _(This is the end of the file.)_
