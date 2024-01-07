@@ -1,0 +1,22 @@
+#!/bin/bash
+
+rm -rf output
+mkdir output
+
+cp pack.mcmeta output
+
+mkdir output/data
+mkdir output/data/cjt_ship
+mkdir output/data/cjt_ship/functions
+
+cp -r functions/* output/data/cjt_ship/functions
+
+rm -f releases/*
+cd output
+zip -r ../releases/CJTspaceships.zip *
+cd ..
+sha1sum releases/CJTspaceships.zip > releases/CJTspaceships.sha1
+
+rm -rf output
+
+# This is the end of the file.
