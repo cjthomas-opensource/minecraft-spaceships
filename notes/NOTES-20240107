@@ -1,0 +1,5 @@
+The original datapack version (5) corresponds to 1.15.
+These worked through 1.20.2, but silently failed at 1.20.4 (and 1.20.3).
+
+As near as I can tell, it's from /function changing, but I haven't ruled out
+/schedule.

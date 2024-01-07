@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rm -rf target/*
+
+cp pack.mcmeta target/
+
+mkdir target/data
+mkdir target/data/cjt_ship
+mkdir target/data/cjt_ship/functions
+
+cp -r functions/* target/data/cjt_ship/functions/

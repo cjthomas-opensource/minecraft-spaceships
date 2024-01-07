@@ -1,0 +1,17 @@
+As of 1.15, the scripts themselves go in this directory in the world save:
+
+datapacks/CJT_Spaceships/data/cjt_ship/functions/
+
+
+There's a metadata file:
+
+datapacks/CJT_Spaceships/pack.mcmeta
+
+Contents:
+{
+  "pack": {
+    "pack_format": 5,
+    "description": "CJT's Spaceship Scripts"
+  }
+}
+
