@@ -1,0 +1,7 @@
+Paths are turned back into dirt if a ship moves into a space where those
+blocks were solid. (E.g. moving a ship over a copy of itself.)
+
+So, in the future fill the destination volume with air before moving.
+
+This can double as the "am I at the build limit" check, though the "is the
+destination air" check should catch that.
