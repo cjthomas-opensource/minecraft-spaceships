@@ -1,1 +1,1 @@
-say CJT spaceship scripts version 20200622.
+say CJT spaceship scripts version 20240107.

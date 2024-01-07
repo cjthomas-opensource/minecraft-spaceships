@@ -21,19 +21,38 @@ Usage:  make-functions.pl  (target directory)
 Endofblock
 
 
-# Version.
-my ($version);
-$version = '20200622';
 
-
-# Ticks to wait before doing anything.
-my ($tickdelay);
-$tickdelay = 20;
+#
+# Testing switches.
 
 
 # "Smoke test" switch, generating the fewest test cases.
 my ($smoke_test);
 $smoke_test = 0;
+
+# "Version" switch, forcing older versions.
+# Use '' or 'latest' for the current version.
+my ($force_version);
+$force_version = '';
+#$force_version = '1.15';
+
+
+
+#
+# Configuration variables.
+
+
+# Version.
+my ($version);
+if ( '1.15' eq $force_version )
+{ $version = '20200622'; }
+else
+{ $version = '20240107'; }
+
+
+# Ticks to wait before doing anything.
+my ($tickdelay);
+$tickdelay = 20;
 
 
 # Movement distances.
@@ -52,10 +71,37 @@ if ($smoke_test)
 { @distlist = ( 32 ); }
 
 
-# Selector for Space Bunny entities.
-my ($selector, $bunnytag);
-$bunnytag = 'CustomName:\'{"text":"SpaceBunny"}\'';
-$selector = '@e[type=rabbit,nbt={' . $bunnytag . '}]';
+# Space Bunny configuration.
+
+my ($bunnyreportname, $bunnyrealname, $bunnytype);
+$bunnyreportname = 'Warp Bunny';
+# This should be something that nobody would accidentally duplicate.
+# Or deliberately duplicate without reading this script or the functions.
+$bunnyrealname = 'SpaceBunnyEntity';
+
+# This was originally a rabbit, but that resulted in spaceships raining
+# rabbit bits down underneath them, causing some players distress.
+# With markers, check all other scripts for interactions in case one of them
+# decides to affect all markers in the world while a spaceship is active.
+#$bunnytype = 'rabbit';
+$bunnytype = 'marker';
+
+# NBT tag and NBT selector for Space Bunny entities.
+# This also includes an "everything except space bunnies" selector.
+# NOTE - 1.20.4 changed the way text selection works.
+my ($bunnytag, $bunnyselector, $bunnynonselector);
+if ( '1.15' eq $force_version )
+{
+  $bunnytag = 'CustomName:\'{"text":"' . $bunnyrealname . '"}\'';
+  $bunnyselector = 'type=' . $bunnytype . ',nbt={' . $bunnytag . '}';
+  $bunnynonselector = 'type=!' . $bunnytype;
+}
+else
+{
+  $bunnytag = 'CustomName:\'"' . $bunnyrealname . '"\'';
+  $bunnyselector = 'type=' . $bunnytype . ',nbt={' . $bunnytag . '}';
+  $bunnynonselector = 'nbt=!{' . $bunnytag . '}';
+}
 
 
 
@@ -134,8 +180,9 @@ sub GenerateMovement
     # Entry point.
     # This is a mutex wrapper for the real entry point.
     WriteFile( "$outdir/$prefix" . '.mcfunction',
-      "execute if entity $selector run say Warp bunny is busy!\n"
-      . "execute unless entity $selector run"
+      "execute if entity \@e[$bunnyselector] run"
+      . " say $bunnyreportname is busy!\n"
+      . "execute unless entity \@e[$bunnyselector] run"
       . " function cjt_ship:$prefix" . "_real\n" );
 
     # Real entry point.
@@ -153,13 +200,13 @@ sub GenerateMovement
     # NOTE - Do not use "replace move". That leaves the passengers falling,
     # and the displacement will carry over during the teleport.
     WriteFile( "$outdir/$prefix" . 'copy.mcfunction',
-      "execute at $selector run clone ~ ~ ~ ~" . ($xsize - 1)
+      "execute at \@e[$bunnyselector] run clone ~ ~ ~ ~" . ($xsize - 1)
       . " ~" . ($ysize - 1) . " ~" . ($zsize - 1)
       . " ~$dx ~$dy ~$dz\n" );
 
     # Teleport helper.
-    # NOTE - Don't move rabbits. SpaceBunny has to stay where it is.
-    # Do move other critters, in case horses or dogs are on board.
+    # NOTE - Don't move the SpaceBunny. SpaceBunny has to stay where it is.
+    # Do move all other critters, in case horses or dogs are on board.
     # Remember "at @s"! Otherwise everything moves to the same location.
 
     # FIXME - Bedrock Edition can use tilde notation in a volume selector.
@@ -172,8 +219,8 @@ sub GenerateMovement
     $radius = sprintf('%.2f', $radius);
 
     WriteFile( "$outdir/$prefix" . 'tport.mcfunction',
-      "execute at $selector positioned ~$xmid ~$ymid ~$zmid"
-      . ' as @e[type=!rabbit,distance=..' . $radius . ']'
+      "execute at \@e[$bunnyselector] positioned ~$xmid ~$ymid ~$zmid"
+      . ' as @e[' . $bunnynonselector . ',distance=..' . $radius . ']'
       . ' at @s run teleport @s' . " ~$dx ~$dy ~$dz\n" );
   }
 }
@@ -212,6 +259,10 @@ sub GenerateScripts
   }
   else
   {
+    # Progress banner, since this takes a while (maybe due to shell calls?).
+    print ".. Generating \"$label\"...\n";
+
+
     # NOTE - Minecraft does not like more than one underscore in a name.
     # The approved way of grouping functions is subfolders.
 
@@ -232,12 +283,12 @@ sub GenerateScripts
     WriteFile( "$outdir/$label/erase.mcfunction",
 
       # First, destroy blocks in the target volume.
-      "execute at $selector run fill ~ ~ ~ ~" . ($xsize - 1)
+      "execute at \@e[$bunnyselector] run fill ~ ~ ~ ~" . ($xsize - 1)
         . " ~" . ($ysize - 1) . " ~" . ($zsize - 1) . " air\n"
 
       # Next, destroy all item entities in the target volume.
       # Borrow the teleport volume specifier, since we can't use ~ notation.
-      . "execute at $selector positioned ~$xmid ~$ymid ~$zmid"
+      . "execute at \@e[$bunnyselector] positioned ~$xmid ~$ymid ~$zmid"
       . ' run kill @e[type=item,distance=..' . $radius . "]\n"
     );
 
@@ -293,10 +344,12 @@ else
   # FIXME - This should also be invisible, but that's tricky to get working.
   # NOTE - The rabbit needs to be invulnerable. Otherwise operations fail
   # when the rabbit dies mid-transport.
+  # Markers default to being invisible and invulnerable, but critters need
+  # specific tags. Add them even if we're using a marker.
   WriteFile("$outdir/makebunny.mcfunction",
-    "summon rabbit ~ ~ ~ {NoAI:1,Invulnerable:1,$bunnytag}\n");
+    "summon $bunnytype ~ ~ ~ {NoAI:1,Invulnerable:1,$bunnytag}\n");
 
-  WriteFile("$outdir/killbunny.mcfunction", "kill $selector\n");
+  WriteFile("$outdir/killbunny.mcfunction", "kill \@e[$bunnyselector]\n");
 
   if ($smoke_test)
   {

@@ -1,1 +1,1 @@
-execute at @e[type=rabbit,nbt={CustomName:'{"text":"SpaceBunny"}'}] positioned ~7.5 ~3.5 ~7.5 as @e[type=!rabbit,distance=..12.00] at @s run teleport @s ~ ~-48 ~
+execute at @e[type=marker,nbt={CustomName:'"SpaceBunnyEntity"'}] positioned ~7.5 ~3.5 ~7.5 as @e[nbt=!{CustomName:'"SpaceBunnyEntity"'},distance=..12.00] at @s run teleport @s ~ ~-48 ~
